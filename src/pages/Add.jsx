@@ -1,12 +1,12 @@
 import axios from "axios";
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { assets } from "../assets/assets";
 
 const Add = () => {
-  const [img1, setimg1] = useState(false);
-  const [img2, setimg2] = useState(false);
-  const [img3, setimg3] = useState(false);
-  const [img4, setimg4] = useState(false);
+  const [img1, setImg1] = useState(null);
+  const [img2, setImg2] = useState(null);
+  const [img3, setImg3] = useState(null);
+  const [img4, setImg4] = useState(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
@@ -16,65 +16,89 @@ const Add = () => {
   const [sizes, setSizes] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // References cho input file
-  const fileInput1 = React.useRef(null);
-  const fileInput2 = React.useRef(null);
-  const fileInput3 = React.useRef(null);
-  const fileInput4 = React.useRef(null);
+  const fileInput1 = useRef(null);
+  const fileInput2 = useRef(null);
+  const fileInput3 = useRef(null);
+  const fileInput4 = useRef(null);
 
-const submit = async (e) => {
-  e.preventDefault();
-  if (!name || !description || !price || !img1) {
-    alert("Vui lòng nhập đầy đủ thông tin sản phẩm và tải lên ít nhất 1 ảnh.");
-    return;
-  }
-  
-  try {
+  const submit = async (e) => {
+    e.preventDefault();
+
+    // Kiểm tra các trường bắt buộc
+    if (!name || !description || !price) {
+        alert("Vui lòng điền đầy đủ các trường bắt buộc (tên, mô tả, giá)!");
+        return;
+    }
+
+    // Kiểm tra file hình ảnh
+    const validateFile = (file) => {
+        if (!file) return false;
+        if (file.size === 0) {
+            alert("File hình ảnh không được rỗng!");
+            return false;
+        }
+        const allowedTypes = ["image/png", "image/jpeg", "image/jpg"];
+        if (!allowedTypes.includes(file.type)) {
+            alert("Chỉ chấp nhận file hình ảnh (PNG, JPEG, JPG)!");
+            return false;
+        }
+        return true;
+    };
+
+    // Kiểm tra ít nhất một hình ảnh hợp lệ
+    if (!img1 && !img2 && !img3 && !img4) {
+        alert("Vui lòng chọn ít nhất một hình ảnh!");
+        return;
+    }
+
+    // Kiểm tra từng file
+    if (img1 && !validateFile(img1)) return;
+    if (img2 && !validateFile(img2)) return;
+    if (img3 && !validateFile(img3)) return;
+    if (img4 && !validateFile(img4)) return;
+
     setLoading(true);
+
     const formData = new FormData();
     formData.append("name", name);
     formData.append("description", description);
-    formData.append("price", price);
+    formData.append("price", Number(price));
     formData.append("category", category);
-    formData.append("subcategory", subCategory);
-    formData.append("bestseller", bestseller);
+    formData.append("subCategory", subCategory);
+    formData.append("bestseller", bestseller ? "true" : "false");
     formData.append("sizes", JSON.stringify(sizes));
-    
+
     if (img1) formData.append("image1", img1);
     if (img2) formData.append("image2", img2);
     if (img3) formData.append("image3", img3);
     if (img4) formData.append("image4", img4);
 
-    // Gửi dữ liệu lên server
-    const response = await axios.post("http://localhost:4001/api/addproduct", formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
+    try {
+        const response = await axios.post(
+            "http://localhost:4001/api/products/add",
+            formData,
+            {
+                headers: { "Content-Type": "multipart/form-data" },
+            }
+        );
 
-    if (response.status === 200) {
-      alert("Sản phẩm đã được thêm thành công!");
-      // Reset form
-      setName("");
-      setDescription("");
-      setPrice("");
-      setCategory("Men");
-      setSubCategory("Topwear");
-      setBestseller(false);
-      setSizes([]);
-      setimg1(false);
-      setimg2(false);
-      setimg3(false);
-      setimg4(false);
-    } else {
-      alert("Lỗi: " + response.data.message);
+        console.log("📥 Response từ server:", response.data);
+        alert("Sản phẩm đã được thêm thành công!");
+        setName("");
+        setDescription("");
+        setPrice("");
+        setImg1(null);
+        setImg2(null);
+        setImg3(null);
+        setImg4(null);
+        setSizes([]);
+        setBestseller(false);
+    } catch (err) {
+        console.error("❌ Lỗi khi gửi dữ liệu:", err);
+        alert("Lỗi: " + (err.response?.data?.message || err.message));
+    } finally {
+        setLoading(false);
     }
-  } catch (err) {
-    console.error("Lỗi khi thêm sản phẩm:", err);
-    alert("Đã xảy ra lỗi khi thêm sản phẩm.");
-  } finally {
-    setLoading(false);
-  }
 };
 
   const displaySelectedSubcategories = () => {
@@ -115,15 +139,14 @@ const submit = async (e) => {
         <h2 className="text-2xl font-bold">Thêm sản phẩm mới</h2>
         <p className="text-gray-500">Thêm thông tin chi tiết về sản phẩm mới</p>
       </div>
-      
-      <form className="flex flex-col w-full items-start gap-3">
+
+      <form onSubmit={submit} className="flex flex-col w-full items-start gap-3">
         <div>
-          <p className="mb-2 font-semibold">Upload image <span className="text-red-500">*</span></p>
+          <p className="mb-2 font-semibold">
+            Upload image <span className="text-red-500">*</span>
+          </p>
           <div className="flex gap-2">
-            <div
-              onClick={() => fileInput1.current.click()}
-              className="cursor-pointer"
-            >
+            <div onClick={() => fileInput1.current.click()} className="cursor-pointer">
               <img
                 className="w-20 h-20 object-cover border border-gray-300"
                 src={!img1 ? assets.upload_area : URL.createObjectURL(img1)}
@@ -133,14 +156,10 @@ const submit = async (e) => {
                 ref={fileInput1}
                 type="file"
                 hidden
-                onChange={(e) => setimg1(e.target.files[0])}
+                onChange={(e) => setImg1(e.target.files[0])}
               />
             </div>
-
-            <div
-              onClick={() => fileInput2.current.click()}
-              className="cursor-pointer"
-            >
+            <div onClick={() => fileInput2.current.click()} className="cursor-pointer">
               <img
                 className="w-20 h-20 object-cover border border-gray-300"
                 src={!img2 ? assets.upload_area : URL.createObjectURL(img2)}
@@ -150,14 +169,10 @@ const submit = async (e) => {
                 ref={fileInput2}
                 type="file"
                 hidden
-                onChange={(e) => setimg2(e.target.files[0])}
+                onChange={(e) => setImg2(e.target.files[0])}
               />
             </div>
-
-            <div
-              onClick={() => fileInput3.current.click()}
-              className="cursor-pointer"
-            >
+            <div onClick={() => fileInput3.current.click()} className="cursor-pointer">
               <img
                 className="w-20 h-20 object-cover border border-gray-300"
                 src={!img3 ? assets.upload_area : URL.createObjectURL(img3)}
@@ -167,14 +182,10 @@ const submit = async (e) => {
                 ref={fileInput3}
                 type="file"
                 hidden
-                onChange={(e) => setimg3(e.target.files[0])}
+                onChange={(e) => setImg3(e.target.files[0])}
               />
             </div>
-
-            <div
-              onClick={() => fileInput4.current.click()}
-              className="cursor-pointer"
-            >
+            <div onClick={() => fileInput4.current.click()} className="cursor-pointer">
               <img
                 className="w-20 h-20 object-cover border border-gray-300"
                 src={!img4 ? assets.upload_area : URL.createObjectURL(img4)}
@@ -184,14 +195,16 @@ const submit = async (e) => {
                 ref={fileInput4}
                 type="file"
                 hidden
-                onChange={(e) => setimg4(e.target.files[0])}
+                onChange={(e) => setImg4(e.target.files[0])}
               />
             </div>
           </div>
         </div>
 
         <div className="w-full">
-          <p className="mb-2 font-semibold">Product name <span className="text-red-500">*</span></p>
+          <p className="mb-2 font-semibold">
+            Product name <span className="text-red-500">*</span>
+          </p>
           <input
             className="w-full max-w-[500px] px-3 py-2 border border-gray-300 rounded"
             type="text"
@@ -203,7 +216,9 @@ const submit = async (e) => {
         </div>
 
         <div className="w-full">
-          <p className="mb-2 font-semibold">Product description <span className="text-red-500">*</span></p>
+          <p className="mb-2 font-semibold">
+            Product description <span className="text-red-500">*</span>
+          </p>
           <textarea
             className="w-full max-w-[500px] px-3 py-2 border border-gray-300 rounded min-h-[100px]"
             placeholder="Mô tả chi tiết sản phẩm"
@@ -215,13 +230,14 @@ const submit = async (e) => {
 
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:gap-8">
           <div>
-            <p className="mb-2 font-semibold">Product category <span className="text-red-500">*</span></p>
+            <p className="mb-2 font-semibold">
+              Product category <span className="text-red-500">*</span>
+            </p>
             <select
               className="w-full px-3 py-2 border border-gray-300 rounded"
               value={category}
               onChange={(e) => {
                 setCategory(e.target.value);
-                // Reset subcategory when changing main category
                 if (e.target.value === "Men") setSubCategory("Topwear");
                 else if (e.target.value === "Women") setSubCategory("Dresses");
                 else if (e.target.value === "Kids") setSubCategory("Boys");
@@ -233,7 +249,9 @@ const submit = async (e) => {
             </select>
           </div>
           <div>
-            <p className="mb-2 font-semibold">Sub category <span className="text-red-500">*</span></p>
+            <p className="mb-2 font-semibold">
+              Sub category <span className="text-red-500">*</span>
+            </p>
             <select
               className="w-full px-3 py-2 border border-gray-300 rounded"
               value={subCategory}
@@ -242,9 +260,10 @@ const submit = async (e) => {
               {displaySelectedSubcategories()}
             </select>
           </div>
-
           <div>
-            <p className="mb-2 font-semibold">Product price <span className="text-red-500">*</span></p>
+            <p className="mb-2 font-semibold">
+              Product price <span className="text-red-500">*</span>
+            </p>
             <input
               className="w-full px-3 py-2 sm:w-[120px] border border-gray-300 rounded"
               type="number"
@@ -259,90 +278,26 @@ const submit = async (e) => {
         <div>
           <p className="mb-2 font-semibold">Product sizes</p>
           <div className="flex gap-3">
-            <div>
-              <p
-                className={`border border-gray-300 px-3 py-1 cursor-pointer rounded ${
-                  sizes.includes("S") ? "bg-blue-500 text-white border-blue-500" : "bg-slate-100"
-                }`}
-                onClick={() =>
-                  setSizes((prev) =>
-                    prev.includes("S")
-                      ? prev.filter((s) => s !== "S")
-                      : [...prev, "S"]
-                  )
-                }
-              >
-                S
-              </p>
-            </div>
-
-            <div>
-              <p
-                className={`border border-gray-300 px-3 py-1 cursor-pointer rounded ${
-                  sizes.includes("M") ? "bg-blue-500 text-white border-blue-500" : "bg-slate-100"
-                }`}
-                onClick={() =>
-                  setSizes((prev) =>
-                    prev.includes("M")
-                      ? prev.filter((s) => s !== "M")
-                      : [...prev, "M"]
-                  )
-                }
-              >
-                M
-              </p>
-            </div>
-
-            <div>
-              <p
-                className={`border border-gray-300 px-3 py-1 cursor-pointer rounded ${
-                  sizes.includes("L") ? "bg-blue-500 text-white border-blue-500" : "bg-slate-100"
-                }`}
-                onClick={() =>
-                  setSizes((prev) =>
-                    prev.includes("L")
-                      ? prev.filter((s) => s !== "L")
-                      : [...prev, "L"]
-                  )
-                }
-              >
-                L
-              </p>
-            </div>
-
-            <div>
-              <p
-                className={`border border-gray-300 px-3 py-1 cursor-pointer rounded ${
-                  sizes.includes("XL") ? "bg-blue-500 text-white border-blue-500" : "bg-slate-100"
-                }`}
-                onClick={() =>
-                  setSizes((prev) =>
-                    prev.includes("XL")
-                      ? prev.filter((s) => s !== "XL")
-                      : [...prev, "XL"]
-                  )
-                }
-              >
-                XL
-              </p>
-            </div>
-
-            <div>
-              <p
-                className={`border border-gray-300 px-3 py-1 cursor-pointer rounded ${
-                  sizes.includes("XXL") ? "bg-blue-500 text-white border-blue-500" : "bg-slate-100"
-                }`}
-                onClick={() =>
-                  setSizes((prev) =>
-                    prev.includes("XXL")
-                      ? prev.filter((s) => s !== "XXL")
-                      : [...prev, "XXL"]
-                  )
-                }
-              >
-                XXL
-              </p>
-            </div>
+            {["S", "M", "L", "XL", "XXL"].map((size) => (
+              <div key={size}>
+                <p
+                  className={`border border-gray-300 px-3 py-1 cursor-pointer rounded ${
+                    sizes.includes(size)
+                      ? "bg-blue-500 text-white border-blue-500"
+                      : "bg-slate-100"
+                  }`}
+                  onClick={() =>
+                    setSizes((prev) =>
+                      prev.includes(size)
+                        ? prev.filter((s) => s !== size)
+                        : [...prev, size]
+                    )
+                  }
+                >
+                  {size}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -358,9 +313,8 @@ const submit = async (e) => {
           </label>
         </div>
 
-        <button 
-          onClick={submit} 
-          type="submit" 
+        <button
+          type="submit"
           className="w-28 py-3 mt-4 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
           disabled={loading}
         >
