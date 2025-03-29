@@ -1,5 +1,6 @@
 import axios from "axios";
-import React, { useState, useRef } from "react";
+import React, { useRef, useState } from "react";
+import { toast } from "react-toastify";
 import { assets } from "../assets/assets";
 
 const Add = () => {
@@ -24,34 +25,34 @@ const Add = () => {
   const submit = async (e) => {
     e.preventDefault();
 
-    // Kiểm tra các trường bắt buộc
+    // Validate required fields
     if (!name || !description || !price) {
-        alert("Vui lòng điền đầy đủ các trường bắt buộc (tên, mô tả, giá)!");
+        toast.error("Please fill in all required fields (name, description, price)!");
         return;
     }
 
-    // Kiểm tra file hình ảnh
+    // Validate image files
     const validateFile = (file) => {
         if (!file) return false;
         if (file.size === 0) {
-            alert("File hình ảnh không được rỗng!");
+            toast.error("Image file cannot be empty!");
             return false;
         }
         const allowedTypes = ["image/png", "image/jpeg", "image/jpg"];
         if (!allowedTypes.includes(file.type)) {
-            alert("Chỉ chấp nhận file hình ảnh (PNG, JPEG, JPG)!");
+            toast.error("Only PNG, JPEG, and JPG image files are allowed!");
             return false;
         }
         return true;
     };
 
-    // Kiểm tra ít nhất một hình ảnh hợp lệ
+    // Check for at least one valid image
     if (!img1 && !img2 && !img3 && !img4) {
-        alert("Vui lòng chọn ít nhất một hình ảnh!");
+        toast.error("Please select at least one image!");
         return;
     }
 
-    // Kiểm tra từng file
+    // Validate each file
     if (img1 && !validateFile(img1)) return;
     if (img2 && !validateFile(img2)) return;
     if (img3 && !validateFile(img3)) return;
@@ -82,8 +83,8 @@ const Add = () => {
             }
         );
 
-        console.log("📥 Response từ server:", response.data);
-        alert("Sản phẩm đã được thêm thành công!");
+        console.log("📥 Server response:", response.data);
+        toast.success("Product added successfully!");
         setName("");
         setDescription("");
         setPrice("");
@@ -94,8 +95,8 @@ const Add = () => {
         setSizes([]);
         setBestseller(false);
     } catch (err) {
-        console.error("❌ Lỗi khi gửi dữ liệu:", err);
-        alert("Lỗi: " + (err.response?.data?.message || err.message));
+        console.error("❌ Error sending data:", err);
+        toast.error(err.response?.data?.message || err.message);
     } finally {
         setLoading(false);
     }
@@ -136,8 +137,8 @@ const Add = () => {
   return (
     <div className="p-5">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold">Thêm sản phẩm mới</h2>
-        <p className="text-gray-500">Thêm thông tin chi tiết về sản phẩm mới</p>
+        <h2 className="text-2xl font-bold">Add New Product</h2>
+        <p className="text-gray-500">Add detailed information about the new product</p>
       </div>
 
       <form onSubmit={submit} className="flex flex-col w-full items-start gap-3">
@@ -208,7 +209,7 @@ const Add = () => {
           <input
             className="w-full max-w-[500px] px-3 py-2 border border-gray-300 rounded"
             type="text"
-            placeholder="Nhập tên sản phẩm"
+            placeholder="Enter product name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
@@ -221,7 +222,7 @@ const Add = () => {
           </p>
           <textarea
             className="w-full max-w-[500px] px-3 py-2 border border-gray-300 rounded min-h-[100px]"
-            placeholder="Mô tả chi tiết sản phẩm"
+            placeholder="Enter product description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             required
