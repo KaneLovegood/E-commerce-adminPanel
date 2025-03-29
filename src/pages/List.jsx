@@ -36,8 +36,8 @@ const List = () => {
         }
       }
     } catch (error) {
-      console.error('Lỗi khi lấy danh sách sản phẩm:', error);
-      toast.error('Không thể tải danh sách sản phẩm');
+      console.error('Error fetching products:', error);
+      toast.error('Failed to load products');
     } finally {
       setLoading(false);
     }
@@ -48,18 +48,18 @@ const List = () => {
   };
 
   const handleDelete = async (_id) => {
-    if (window.confirm(`Bạn có chắc chắn muốn xóa sản phẩm này?`)) {
+    if (window.confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
       try {
         setDeleteLoading(_id);
         const response = await axios.post(`http://localhost:4001/api/products/remove`, { _id });
-  
+
         if (response.status === 200) {
-          toast.success('Đã xóa sản phẩm thành công');
-          getProducts(); // Tải lại danh sách sau khi xóa
+          toast.success('Product deleted successfully');
+          getProducts();
         }
       } catch (error) {
-        console.error('Lỗi khi xóa sản phẩm:', error);
-        toast.error('Không thể xóa sản phẩm');
+        console.error('Error deleting product:', error);
+        toast.error('Failed to delete product');
       } finally {
         setDeleteLoading(null);
       }
@@ -72,24 +72,24 @@ const List = () => {
         <button
           onClick={() => handlePageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          className={`px-6 py-2 rounded ${
+          className={`px-6 py-2 rounded transition-all duration-200 ${
             currentPage === 1
               ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-              : 'bg-blue-500 text-white hover:bg-blue-600'
+              : 'bg-blue-500 text-white hover:bg-blue-600 hover:shadow-lg'
           }`}
         >
-          Trước
+          Previous
         </button>
         <button
           onClick={() => handlePageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className={`px-6 py-2 rounded ${
+          className={`px-6 py-2 rounded transition-all duration-200 ${
             currentPage === totalPages
               ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-              : 'bg-blue-500 text-white hover:bg-blue-600'
+              : 'bg-blue-500 text-white hover:bg-blue-600 hover:shadow-lg'
           }`}
         >
-          Sau
+          Next
         </button>
       </div>
     );
@@ -98,8 +98,8 @@ const List = () => {
   return (
     <div className="w-full">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold">Danh sách sản phẩm</h2>
-        <p className="text-gray-500">Quản lý tất cả sản phẩm của bạn</p>
+        <h2 className="text-2xl font-bold">Product List</h2>
+        <p className="text-gray-500">Manage all your products</p>
       </div>
 
       {loading ? (
@@ -108,39 +108,39 @@ const List = () => {
         </div>
       ) : products.length === 0 ? (
         <div className="text-center py-10">
-          <p>Không có sản phẩm nào.</p>
+          <p>No products found.</p>
         </div>
       ) : (
         <>
           <div className="overflow-x-auto">
-            <table className="min-w-full bg-white">
+            <table className="min-w-full bg-white shadow-lg rounded-lg">
               <thead className="bg-gray-100">
                 <tr>
-                  <th className="py-3 px-4 text-left">Hình ảnh</th>
-                  <th className="py-3 px-4 text-left">Tên sản phẩm</th>
-                  <th className="py-3 px-4 text-left">Giá</th>
-                  <th className="py-3 px-4 text-left">Danh mục</th>
-                  <th className="py-3 px-4 text-left">Kích thước</th>
-                  <th className="py-3 px-4 text-center">Thao tác</th>
+                  <th className="py-3 px-4 text-left">Image</th>
+                  <th className="py-3 px-4 text-left">Product Name</th>
+                  <th className="py-3 px-4 text-left">Price</th>
+                  <th className="py-3 px-4 text-left">Category</th>
+                  <th className="py-3 px-4 text-left">Sizes</th>
+                  <th className="py-3 px-4 text-center">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {products.map((product) => (
-                  <tr key={product._id} className="border-b hover:bg-gray-50">
+                  <tr key={product._id} className="border-b hover:bg-gray-50 transition-colors duration-200">
                     <td className="py-3 px-4">
                       <img 
                         src={product.image && product.image.length > 0 ? product.image[0] : ''} 
                         alt={product.name}
-                        className="w-12 h-12 object-cover"
+                        className="w-12 h-12 object-cover rounded"
                       />
                     </td>
                     <td className="py-3 px-4 font-medium">{product.name}</td>
-                    <td className="py-3 px-4">{Number(product.price).toLocaleString()} VND</td>
+                    <td className="py-3 px-4">${Number(product.price).toLocaleString()}</td>
                     <td className="py-3 px-4">{product.category} - {product.subCategory}</td>
                     <td className="py-3 px-4">
                       <div className="flex gap-1">
                         {product.sizes && Array.isArray(product.sizes) ? product.sizes.map((size) => (
-                          <span key={size} className="px-2 py-1 bg-gray-100 text-xs rounded">{size}</span>
+                          <span key={size} className="px-2 py-1 bg-gray-100 text-xs rounded-full">{size}</span>
                         )) : null}
                       </div>
                     </td>
@@ -149,7 +149,7 @@ const List = () => {
                         <button 
                           onClick={() => handleDelete(product._id)}
                           disabled={deleteLoading === product._id}
-                          className="p-2 text-red-500 hover:bg-red-50 rounded-full"
+                          className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors duration-200"
                         >
                           {deleteLoading === product._id ? (
                             <div className="animate-spin h-5 w-5 border-t-2 border-red-500 rounded-full"></div>
@@ -157,7 +157,7 @@ const List = () => {
                             <RiDeleteBin6Line />
                           )}
                         </button>
-                        <button className="p-2 text-blue-500 hover:bg-blue-50 rounded-full">
+                        <button className="p-2 text-blue-500 hover:bg-blue-50 rounded-full transition-colors duration-200">
                           <FaEdit />
                         </button>
                       </div>
@@ -168,11 +168,9 @@ const List = () => {
             </table>
           </div>
 
-          {/* Phân trang */}
+          {/* Pagination */}
           <div className="mt-8 flex flex-col items-center gap-4">
-            <div className="text-sm text-gray-600">
-              Tổng số sản phẩm: {totalProducts}
-            </div>
+            
             {renderPaginationButtons()}
           </div>
         </>

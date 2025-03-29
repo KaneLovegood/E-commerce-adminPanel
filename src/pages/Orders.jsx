@@ -121,7 +121,7 @@ const Orders = () => {
           )
         );
         
-        toast.success('Đã cập nhật trạng thái đơn hàng');
+        toast.success('Order status updated successfully');
       }
     } catch (error) {
       if (error.response?.status === 401) {
@@ -134,13 +134,13 @@ const Orders = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'Đang xử lý':
+      case 'Processing':
         return 'bg-yellow-100 text-yellow-800';
-      case 'Đang giao hàng':
+      case 'Shipping':
         return 'bg-blue-100 text-blue-800';
-      case 'Đã giao hàng':
+      case 'Delivered':
         return 'bg-green-100 text-green-800';
-      case 'Đã hủy':
+      case 'Cancelled':
         return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
@@ -149,7 +149,7 @@ const Orders = () => {
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('vi-VN', {
+    return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -163,7 +163,6 @@ const Orders = () => {
       setExportLoading(true);
       const token = localStorage.getItem('token');
       if (!token) {
-        toast.error('Vui lòng đăng nhập lại');
         return;
       }
 
@@ -183,13 +182,10 @@ const Orders = () => {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(link);
       
-      toast.success('Đã xuất đơn hàng thành công');
+      toast.success('Order exported successfully');
     } catch (error) {
-      console.error('Lỗi khi xuất đơn hàng:', error);
       if (error.response?.status === 401) {
-        toast.error('Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại');
-      } else {
-        toast.error('Không thể xuất đơn hàng');
+        return;
       }
     } finally {
       setExportLoading(false);
@@ -200,7 +196,7 @@ const Orders = () => {
     e.preventDefault();
     
     if (!dateRange.startDate || !dateRange.endDate) {
-      toast.warning('Vui lòng chọn khoảng thời gian');
+      toast.warning('Please select date range');
       return;
     }
     
@@ -208,7 +204,6 @@ const Orders = () => {
       setExportLoading(true);
       const token = localStorage.getItem('token');
       if (!token) {
-        toast.error('Vui lòng đăng nhập lại');
         return;
       }
 
@@ -228,13 +223,10 @@ const Orders = () => {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(link);
       
-      toast.success('Đã xuất đơn hàng thành công');
+      toast.success('Orders exported successfully');
     } catch (error) {
-      console.error('Lỗi khi xuất đơn hàng:', error);
       if (error.response?.status === 401) {
-        toast.error('Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại');
-      } else {
-        toast.error('Không thể xuất đơn hàng');
+        return;
       }
     } finally {
       setExportLoading(false);
@@ -249,15 +241,15 @@ const Orders = () => {
   return (
     <div className="w-full">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold">Quản lý đơn hàng</h2>
-        <p className="text-gray-500">Xem và cập nhật trạng thái đơn hàng</p>
+        <h2 className="text-2xl font-bold">Order Management</h2>
+        <p className="text-gray-500">View and update order status</p>
       </div>
 
       <div className="mb-6 p-4 bg-white rounded-lg shadow">
-        <h3 className="text-lg font-medium mb-3">Lọc đơn hàng theo khoảng thời gian</h3>
+        <h3 className="text-lg font-medium mb-3">Filter Orders by Date Range</h3>
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex-1 min-w-[200px]">
-            <label className="block text-sm font-medium mb-1">Từ ngày</label>
+            <label className="block text-sm font-medium mb-1">From Date</label>
             <input
               type="date"
               name="startDate"
@@ -268,7 +260,7 @@ const Orders = () => {
             />
           </div>
           <div className="flex-1 min-w-[200px]">
-            <label className="block text-sm font-medium mb-1">Đến ngày</label>
+            <label className="block text-sm font-medium mb-1">To Date</label>
             <input
               type="date"
               name="endDate"
@@ -286,10 +278,10 @@ const Orders = () => {
             {exportLoading ? (
               <>
                 <div className="animate-spin h-4 w-4 border-t-2 border-white rounded-full mr-2"></div>
-                Đang xuất...
+                Exporting...
               </>
             ) : (
-              <>Xuất đơn hàng</>
+              <>Export Orders</>
             )}
           </button>
         </div>
@@ -301,19 +293,19 @@ const Orders = () => {
         </div>
       ) : !Array.isArray(filteredOrders) || filteredOrders.length === 0 ? (
         <div className="text-center py-10">
-          <p>Không có đơn hàng nào.</p>
+          <p>No orders found.</p>
         </div>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full bg-white">
             <thead className="bg-gray-100">
               <tr>
-                <th className="py-3 px-4 text-left">Mã đơn hàng</th>
-                <th className="py-3 px-4 text-left">Ngày đặt</th>
-                <th className="py-3 px-4 text-left">Khách hàng</th>
-                <th className="py-3 px-4 text-left">Tổng tiền</th>
-                <th className="py-3 px-4 text-left">Trạng thái</th>
-                <th className="py-3 px-4 text-left">Thao tác</th>
+                <th className="py-3 px-4 text-left">Order ID</th>
+                <th className="py-3 px-4 text-left">Order Date</th>
+                <th className="py-3 px-4 text-left">Customer</th>
+                <th className="py-3 px-4 text-left">Total Amount</th>
+                <th className="py-3 px-4 text-left">Status</th>
+                <th className="py-3 px-4 text-left">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -327,7 +319,7 @@ const Orders = () => {
                       <p className="text-sm text-gray-500">{order.userId?.email || 'N/A'}</p>
                     </div>
                   </td>
-                  <td className="py-3 px-4 font-medium">{Number(order.totalAmount).toLocaleString()} VND</td>
+                  <td className="py-3 px-4 font-medium">${Number(order.totalAmount).toLocaleString()}</td>
                   <td className="py-3 px-4">
                     <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(order.status)}`}>
                       {order.status}
@@ -343,15 +335,15 @@ const Orders = () => {
                           value={order.status}
                           onChange={(e) => updateStatus(order._id, e.target.value)}
                         >
-                          <option value="Đang xử lý">Đang xử lý</option>
-                          <option value="Đang giao hàng">Đang giao hàng</option>
-                          <option value="Đã giao hàng">Đã giao hàng</option>
-                          <option value="Đã hủy">Đã hủy</option>
+                          <option value="Processing">Processing</option>
+                          <option value="Shipping">Shipping</option>
+                          <option value="Delivered">Delivered</option>
+                          <option value="Cancelled">Cancelled</option>
                         </select>
                         <button 
                           onClick={() => exportOrder(order._id)}
                           className="text-blue-600 hover:text-blue-800"
-                          title="Xuất đơn hàng"
+                          title="Export Order"
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
