@@ -1,10 +1,9 @@
 import axios from 'axios'
 import React, { useState } from 'react'
-import { backendUrl } from '../App.jsx'
 import { toast } from 'react-toastify'
+import { backendUrl } from '../App.jsx'
 
 const Login = ({setToken}) => {
-
     const [email,setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [error, setError] = useState('')
@@ -15,15 +14,13 @@ const Login = ({setToken}) => {
             
             const response = await axios.post(backendUrl + '/api/user/admin',{email,password})
             if(response.data.success){
-                setToken(response.data.setToken)
+                setToken(response.data.token)
             } else{
                 toast.error(response.data.message)
             }
             
         } catch (error) {
-            console.log(error)
-            toast.error(error.message)
-
+            toast.error(error.response?.data?.message || 'Đăng nhập thất bại')
         }
     }
 

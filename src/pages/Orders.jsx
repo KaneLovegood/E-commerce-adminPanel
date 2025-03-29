@@ -5,6 +5,7 @@ import 'react-toastify/dist/ReactToastify.css';
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
+  const [filteredOrders, setFilteredOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusLoading, setStatusLoading] = useState(null);
   const [exportLoading, setExportLoading] = useState(false);
@@ -17,16 +18,65 @@ const Orders = () => {
     getOrders();
   }, []);
 
+  useEffect(() => {
+    if (dateRange.startDate && dateRange.endDate) {
+      filterOrdersByDateRange();
+    } else {
+      setFilteredOrders(Array.isArray(orders) ? orders : []);
+    }
+  }, [dateRange, orders]);
+
   const getOrders = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:4001/api/order/all');
+      const token = localStorage.getItem('token');
+      if (!token) {
+        return;
+      }
+
+      const response = await axios.get('http://localhost:4001/api/order/all', {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
       if (response.status === 200) {
-        setOrders(response.data.orders);
+        const ordersData = Array.isArray(response.data.orders) ? response.data.orders : [];
+        setOrders(ordersData);
+        setFilteredOrders(ordersData);
       }
     } catch (error) {
-      console.error('Lỗi khi lấy danh sách đơn hàng:', error);
-      toast.error('Không thể tải danh sách đơn hàng');
+      if (error.response?.status === 401) {
+        return;
+      }
+      setOrders([]);
+      setFilteredOrders([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filterOrdersByDateRange = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        return;
+      }
+
+      const response = await axios.post('http://localhost:4001/api/order/export-by-date', dateRange, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      if (response.status === 200) {
+        const filteredData = Array.isArray(response.data.orders) ? response.data.orders : [];
+        setFilteredOrders(filteredData);
+      }
+    } catch (error) {
+      if (error.response?.status === 401) {
+        return;
+      }
+      setFilteredOrders([]);
     } finally {
       setLoading(false);
     }
@@ -35,18 +85,48 @@ const Orders = () => {
   const updateStatus = async (orderId, newStatus) => {
     try {
       setStatusLoading(orderId);
-      const response = await axios.patch(`http://localhost:4001/api/order/update-status`, {
-        orderId,
-        status: newStatus
-      });
+      const token = localStorage.getItem('token');
       
-      if (response.status === 200) {
+      if (!token) {
+        return;
+      }
+
+      const response = await axios.patch(
+        `http://localhost:4001/api/order/update-status`, 
+        {
+          orderId,
+          status: newStatus
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+      
+      if (response.status === 200 && response.data.success) {
+        setOrders(prevOrders => 
+          prevOrders.map(order => 
+            order._id === orderId 
+              ? { ...order, status: newStatus }
+              : order
+          )
+        );
+        
+        setFilteredOrders(prevFilteredOrders => 
+          prevFilteredOrders.map(order => 
+            order._id === orderId 
+              ? { ...order, status: newStatus }
+              : order
+          )
+        );
+        
         toast.success('Đã cập nhật trạng thái đơn hàng');
-        getOrders(); // Refresh danh sách
       }
     } catch (error) {
-      console.error('Lỗi khi cập nhật trạng thái đơn hàng:', error);
-      toast.error('Không thể cập nhật trạng thái đơn hàng');
+      if (error.response?.status === 401) {
+        return;
+      }
     } finally {
       setStatusLoading(null);
     }
@@ -78,40 +158,44 @@ const Orders = () => {
     });
   };
 
-  // Hàm xuất một đơn hàng
   const exportOrder = async (orderId) => {
     try {
       setExportLoading(true);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        toast.error('Vui lòng đăng nhập lại');
+        return;
+      }
+
       const response = await axios.get(`http://localhost:4001/api/order/export/${orderId}`, {
-        responseType: 'blob'
+        responseType: 'blob',
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
       });
       
-      // Tạo đường dẫn URL tạm thời cho blob
       const url = window.URL.createObjectURL(new Blob([response.data]));
-      
-      // Tạo thẻ a để tải xuống
       const link = document.createElement('a');
       link.href = url;
       link.setAttribute('download', `order_${orderId}_${Date.now()}.json`);
       document.body.appendChild(link);
-      
-      // Kích hoạt tải xuống
       link.click();
-      
-      // Dọn dẹp
       window.URL.revokeObjectURL(url);
       document.body.removeChild(link);
       
       toast.success('Đã xuất đơn hàng thành công');
     } catch (error) {
       console.error('Lỗi khi xuất đơn hàng:', error);
-      toast.error('Không thể xuất đơn hàng');
+      if (error.response?.status === 401) {
+        toast.error('Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại');
+      } else {
+        toast.error('Không thể xuất đơn hàng');
+      }
     } finally {
       setExportLoading(false);
     }
   };
 
-  // Hàm xuất nhiều đơn hàng theo khoảng thời gian
   const exportOrdersByDateRange = async (e) => {
     e.preventDefault();
     
@@ -122,36 +206,41 @@ const Orders = () => {
     
     try {
       setExportLoading(true);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        toast.error('Vui lòng đăng nhập lại');
+        return;
+      }
+
       const response = await axios.post(`http://localhost:4001/api/order/export-by-date`, dateRange, {
-        responseType: 'blob'
+        responseType: 'blob',
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
       });
       
-      // Tạo đường dẫn URL tạm thời cho blob
       const url = window.URL.createObjectURL(new Blob([response.data]));
-      
-      // Tạo thẻ a để tải xuống
       const link = document.createElement('a');
       link.href = url;
       link.setAttribute('download', `orders_export_${Date.now()}.json`);
       document.body.appendChild(link);
-      
-      // Kích hoạt tải xuống
       link.click();
-      
-      // Dọn dẹp
       window.URL.revokeObjectURL(url);
       document.body.removeChild(link);
       
       toast.success('Đã xuất đơn hàng thành công');
     } catch (error) {
       console.error('Lỗi khi xuất đơn hàng:', error);
-      toast.error('Không thể xuất đơn hàng');
+      if (error.response?.status === 401) {
+        toast.error('Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại');
+      } else {
+        toast.error('Không thể xuất đơn hàng');
+      }
     } finally {
       setExportLoading(false);
     }
   };
 
-  // Xử lý thay đổi input khoảng thời gian
   const handleDateRangeChange = (e) => {
     const { name, value } = e.target;
     setDateRange(prev => ({ ...prev, [name]: value }));
@@ -164,10 +253,9 @@ const Orders = () => {
         <p className="text-gray-500">Xem và cập nhật trạng thái đơn hàng</p>
       </div>
 
-      {/* Form xuất đơn hàng theo khoảng thời gian */}
       <div className="mb-6 p-4 bg-white rounded-lg shadow">
-        <h3 className="text-lg font-medium mb-3">Xuất đơn hàng theo khoảng thời gian</h3>
-        <form onSubmit={exportOrdersByDateRange} className="flex flex-wrap items-end gap-3">
+        <h3 className="text-lg font-medium mb-3">Lọc đơn hàng theo khoảng thời gian</h3>
+        <div className="flex flex-wrap items-end gap-3">
           <div className="flex-1 min-w-[200px]">
             <label className="block text-sm font-medium mb-1">Từ ngày</label>
             <input
@@ -191,7 +279,7 @@ const Orders = () => {
             />
           </div>
           <button
-            type="submit"
+            onClick={exportOrdersByDateRange}
             disabled={exportLoading}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded flex items-center"
           >
@@ -204,14 +292,14 @@ const Orders = () => {
               <>Xuất đơn hàng</>
             )}
           </button>
-        </form>
+        </div>
       </div>
 
       {loading ? (
         <div className="flex justify-center py-10">
           <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500"></div>
         </div>
-      ) : orders.length === 0 ? (
+      ) : !Array.isArray(filteredOrders) || filteredOrders.length === 0 ? (
         <div className="text-center py-10">
           <p>Không có đơn hàng nào.</p>
         </div>
@@ -229,7 +317,7 @@ const Orders = () => {
               </tr>
             </thead>
             <tbody>
-              {orders.map((order) => (
+              {filteredOrders.map((order) => (
                 <tr key={order._id} className="border-b hover:bg-gray-50">
                   <td className="py-3 px-4 font-medium">#{order._id.slice(-6)}</td>
                   <td className="py-3 px-4">{formatDate(order.orderDate)}</td>
