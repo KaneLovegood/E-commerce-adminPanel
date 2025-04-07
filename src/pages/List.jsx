@@ -4,6 +4,7 @@ import { FaEdit } from 'react-icons/fa';
 import { RiDeleteBin6Line } from 'react-icons/ri';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { backendUrl } from '../App';
 
 const List = () => {
   const [products, setProducts] = useState([]);
@@ -25,7 +26,7 @@ const List = () => {
   const getProducts = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`http://localhost:4001/api/products/list?page=${currentPage}&limit=${productsPerPage}`);
+      const response = await axios.get(`${backendUrl}/api/products/list?page=${currentPage}&limit=${productsPerPage}`);
       if (response.status === 200 && response.data.success) {
         setProducts(response.data.products);
         setTotalProducts(response.data.total);
@@ -51,7 +52,7 @@ const List = () => {
     if (window.confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
       try {
         setDeleteLoading(_id);
-        const response = await axios.post(`http://localhost:4001/api/products/remove`, { _id });
+        const response = await axios.post(`${backendUrl}/api/products/remove`, { _id });
 
         if (response.status === 200) {
           toast.success('Product deleted successfully');
