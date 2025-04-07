@@ -9,7 +9,7 @@ import Add from "./pages/Add.jsx";
 import List from "./pages/List.jsx";
 import Orders from "./pages/Orders.jsx";
 
-export const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:4000";
+export const backendUrl = (import.meta.env.VITE_BACKEND_URL || "http://localhost:4000").replace(/\/+$/, "");
 
 const App = () => {
   const [token, setToken] = useState(

@@ -2,6 +2,7 @@ import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { backendUrl } from '../App';
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
@@ -34,7 +35,7 @@ const Orders = () => {
         return;
       }
 
-      const response = await axios.get('http://localhost:4001/api/order/all', {
+      const response = await axios.get(`${backendUrl}/api/order/all`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -63,7 +64,7 @@ const Orders = () => {
         return;
       }
 
-      const response = await axios.post('http://localhost:4001/api/order/export-by-date', dateRange, {
+      const response = await axios.post(`${backendUrl}/api/order/export-by-date`, dateRange, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -92,7 +93,7 @@ const Orders = () => {
       }
 
       const response = await axios.patch(
-        `http://localhost:4001/api/order/update-status`, 
+        `${backendUrl}/api/order/update-status`, 
         {
           orderId,
           status: newStatus
@@ -166,7 +167,7 @@ const Orders = () => {
         return;
       }
 
-      const response = await axios.get(`http://localhost:4001/api/order/export/${orderId}`, {
+      const response = await axios.get(`${backendUrl}/api/order/export/${orderId}`, {
         responseType: 'blob',
         headers: {
           Authorization: `Bearer ${token}`
@@ -207,7 +208,7 @@ const Orders = () => {
         return;
       }
 
-      const response = await axios.post(`http://localhost:4001/api/order/export-by-date`, dateRange, {
+      const response = await axios.post(`${backendUrl}/api/order/export-by-date`, dateRange, {
         responseType: 'blob',
         headers: {
           Authorization: `Bearer ${token}`

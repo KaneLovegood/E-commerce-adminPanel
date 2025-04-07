@@ -1,6 +1,7 @@
 import axios from "axios";
 import React, { useRef, useState } from "react";
 import { toast } from "react-toastify";
+import { backendUrl } from "../App";
 import { assets } from "../assets/assets";
 
 const Add = () => {
@@ -76,7 +77,7 @@ const Add = () => {
 
     try {
         const response = await axios.post(
-            "http://localhost:4001/api/products/add",
+            `${backendUrl}/api/products/add`,
             formData,
             {
                 headers: { "Content-Type": "multipart/form-data" },
