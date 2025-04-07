@@ -37,7 +37,7 @@ const Orders = () => {
 
       const response = await axios.get(`${backendUrl}/api/order/all`, {
         headers: {
-          Authorization: `Bearer ${token}`
+          token: token
         }
       });
       if (response.status === 200) {
@@ -66,7 +66,7 @@ const Orders = () => {
 
       const response = await axios.post(`${backendUrl}/api/order/export-by-date`, dateRange, {
         headers: {
-          Authorization: `Bearer ${token}`
+          token: token
         }
       });
       if (response.status === 200) {
@@ -100,7 +100,7 @@ const Orders = () => {
         },
         {
           headers: {
-            Authorization: `Bearer ${token}`
+            token: token
           }
         }
       );
@@ -170,7 +170,7 @@ const Orders = () => {
       const response = await axios.get(`${backendUrl}/api/order/export/${orderId}`, {
         responseType: 'blob',
         headers: {
-          Authorization: `Bearer ${token}`
+          token: token
         }
       });
       
@@ -211,7 +211,7 @@ const Orders = () => {
       const response = await axios.post(`${backendUrl}/api/order/export-by-date`, dateRange, {
         responseType: 'blob',
         headers: {
-          Authorization: `Bearer ${token}`
+          token: token
         }
       });
       
